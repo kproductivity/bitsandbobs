@@ -17,23 +17,23 @@ sapply(pkgs, install.pkgs)
 download.file(url="http://curl.haxx.se/ca/cacert.pem", destfile="cacert.pem")
 
 #Fill these with your keys.
-consumer_key <- 'xxxx'
-consumer_secret <- 'xxxx'
-access_token <- 'xxxx'
-access_secret <- 'xxxx'
+consumer_key <- 'uWSOF1QbzAgzEvERBMFpUJFf2'
+consumer_secret <- 'CuVd4bg2cHbPu4VsDKIacH1k4Tvm61M1ysEo41BdxUoSqv4Uoh'
+access_token <- '17366511-Lqim0o4n8MweB9wtCbJ1JxoIMxHWgSZ3JJaAfqaZH'
+access_secret <- 'ZubJIvbQaqrNqUpcVmVRNuVOiTuXS7OkykPpP9bDrASoM'
 
 setup_twitter_oauth(consumer_key,
                     consumer_secret,
                     access_token,
                     access_secret)
 
-myChar <- "economics" #Your search string
+myChar <- "reutersreplyallgate" #Your search string
 mySearch <- searchTwitter(myChar, n=10000)
 
 #mySearch.df <- twListToDF(mySearch)
 #mySearchUsers <- mySearch.df$screenName
 
-createCorpus <- function(myTwitterSearch){
+createCorpus <- function(myTwitterSearch, exclude){
     
     mySearchText <- sapply(myTwitterSearch, function(x) x$getText())
     
@@ -56,8 +56,8 @@ createCorpus <- function(myTwitterSearch){
     
     mySearchCorpus <- Corpus(VectorSource(mySearchText))
     
-    #Build list of words to filter out
-    myStopwords <- c("RT", "rt")
+    #Build list of words to filter out, including a possible exclude
+    myStopwords <- c("rt", exclude)
     
     mySearchCorpus <- tm_map(mySearchCorpus, content_transformer(tolower))
     mySearchCorpus <- tm_map(mySearchCorpus, removeWords, myStopwords)
@@ -68,7 +68,7 @@ createCorpus <- function(myTwitterSearch){
     mySearchCorpus <- tm_map(mySearchCorpus, stripWhitespace)
 }
 
-myCorpus <- createCorpus(mySearch)
+myCorpus <- createCorpus(mySearch, exclude=myChar)
 
 #Unigrams
 tdm <- TermDocumentMatrix(myCorpus)
