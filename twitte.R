@@ -1,4 +1,7 @@
-#Install needed packages
+###########################
+# Install needed packages #
+###########################
+
 install.pkgs <- function(x){
     if (!require(x, character.only = TRUE)){
         install.packages(x)
@@ -9,18 +12,44 @@ install.pkgs <- function(x){
 update.packages() #this is recommended before installing any package
 pkgs <- c("twitteR", "textcat", "tm", "tau", "wordcloud")
 sapply(pkgs, install.pkgs)
-    
 
 
-#Only for Windows
+###################################
+# Function to retrieve the APIKEY #
+###################################
+
+readAPIkey <- function(){
+    if(file.exists("twitter.key") == TRUE){     # if apikey is already recorded
+        apikey = read.csv("twitter.key",
+                          header = FALSE)       # read it
+    } else {                                    # otherwise, ask for it
+        apikey <- as.vector(c("","","",""))
+        apikey[1] = readline("Consumer key   :")   
+        apikey[2] = readline("Consumer secret:")
+        apikey[3] = readline("Access token   :") 
+        apikey[4] = readline("Access secret  :") 
+        write.csv(apikey, "twitter.key",
+                  col.names = FALSE,
+                  row.names = FALSE)           # and write it in the file
+    }
+    apikey
+}
+
+
+#######################
+# Retrieve the tweets #
+#######################
+
+apikey <- readAPIkey()
+
+consumer_key <- apikey[1,]
+consumer_secret <- apikey[2,]
+access_token <- apikey[3,]
+access_secret <- apikey[4,]
+
+#Adjustment only for Windows
 #see: http://davetang.org/muse/2013/04/06/using-the-r_twitter-package/
 download.file(url="http://curl.haxx.se/ca/cacert.pem", destfile="cacert.pem")
-
-#Fill these with your keys.
-consumer_key <- 'xxxx'
-consumer_secret <- 'xxxx'
-access_token <- 'xxxx'
-access_secret <- 'xxxx'
 
 setup_twitter_oauth(consumer_key,
                     consumer_secret,
@@ -29,6 +58,11 @@ setup_twitter_oauth(consumer_key,
 
 myChar <- "reutersreplyallgate" #Your search string
 mySearch <- searchTwitter(myChar, n=10000)
+
+
+######################
+# Analyse the tweets #
+######################
 
 #mySearch.df <- twListToDF(mySearch)
 #mySearchUsers <- mySearch.df$screenName
