@@ -17,10 +17,10 @@ sapply(pkgs, install.pkgs)
 download.file(url="http://curl.haxx.se/ca/cacert.pem", destfile="cacert.pem")
 
 #Fill these with your keys.
-consumer_key <- 'uWSOF1QbzAgzEvERBMFpUJFf2'
-consumer_secret <- 'CuVd4bg2cHbPu4VsDKIacH1k4Tvm61M1ysEo41BdxUoSqv4Uoh'
-access_token <- '17366511-Lqim0o4n8MweB9wtCbJ1JxoIMxHWgSZ3JJaAfqaZH'
-access_secret <- 'ZubJIvbQaqrNqUpcVmVRNuVOiTuXS7OkykPpP9bDrASoM'
+consumer_key <- 'xxxx'
+consumer_secret <- 'xxxx'
+access_token <- 'xxxx'
+access_secret <- 'xxxx'
 
 setup_twitter_oauth(consumer_key,
                     consumer_secret,
