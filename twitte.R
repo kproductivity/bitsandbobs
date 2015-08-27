@@ -6,8 +6,8 @@ install.pkgs <- function(x){
     require(x, character.only = TRUE)
 }
 
-#update.packages()
-pkgs <- c("twitteR", "textcat", "tm", "stringi", "tau", "wordcloud")
+update.packages() #this is recommended before installing any package
+pkgs <- c("twitteR", "textcat", "tm", "tau", "wordcloud")
 sapply(pkgs, install.pkgs)
     
 
@@ -27,8 +27,7 @@ setup_twitter_oauth(consumer_key,
                     access_token,
                     access_secret)
 
-
-myChar <- "China"
+myChar <- "economics" #Your search string
 mySearch <- searchTwitter(myChar, n=10000)
 
 #mySearch.df <- twListToDF(mySearch)
@@ -58,33 +57,35 @@ createCorpus <- function(myTwitterSearch){
     mySearchCorpus <- Corpus(VectorSource(mySearchText))
     
     #Build list of words to filter out
-    myStopwords <- c("RT")
+    myStopwords <- c("RT", "rt")
     
     mySearchCorpus <- tm_map(mySearchCorpus, content_transformer(tolower))
+    mySearchCorpus <- tm_map(mySearchCorpus, removeWords, myStopwords)
     mySearchCorpus <- tm_map(mySearchCorpus,
                              function(x) removeWords(x,stopwords("english")))
-    mySearchCorpus <- tm_map(mySearchCorpus, removeWords, myStopwords)
     mySearchCorpus <- tm_map(mySearchCorpus, removeNumbers)
     mySearchCorpus <- tm_map(mySearchCorpus, removePunctuation)
     mySearchCorpus <- tm_map(mySearchCorpus, stripWhitespace)
 }
 
 myCorpus <- createCorpus(mySearch)
-tdm <- TermDocumentMatrix(myCorpus)
 
+#Unigrams
+tdm <- TermDocumentMatrix(myCorpus)
 findFreqTerms(tdm, 5)
 
+png("wordcloud.png", width=1280,height=800)
 wordcloud(myCorpus, min.freq=5, max.words=50)
+dev.off()
 
-#Playing with bigrams
-BigramTokenizer <-
-    function(x)
-        unlist(lapply(ngrams(words(x), 2), paste, collapse = " "),
-               use.names = FALSE)
+#Bigrams | I'm using a different package for experimentation
+myCorpusText <- data.frame(text=unlist(sapply(myCorpus,
+                                              `[`, "content")),
+                           stringsAsFactors=F)
 
-tdm2 <- TermDocumentMatrix(myCorpus,
-                           control = list(tokenize = BigramTokenizer))
+bigrams <- textcnt(myCorpusText, n=2L, method = "string")
+bigrams <- data.frame(counts = unclass(bigrams), size = nchar(names(bigrams)))
 
-tdm2b <- removeSparseTerms(tdm2, 0.9)
-inspect(tdm2b)
-
+png("wordcloud.png", width=1280,height=800)
+wordcloud(rownames(bigrams), bigrams$counts, min.freq=4, max.words=50)
+dev.off()
