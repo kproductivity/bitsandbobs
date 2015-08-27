@@ -7,7 +7,7 @@ install.pkgs <- function(x){
 }
 
 #update.packages()
-pkgs <- c("twitteR", "tm", "stringi", "tau", "wordcloud")
+pkgs <- c("twitteR", "textcat", "tm", "stringi", "tau", "wordcloud")
 sapply(pkgs, install.pkgs)
     
 
@@ -28,28 +28,39 @@ setup_twitter_oauth(consumer_key,
                     access_secret)
 
 
-myChar <- "volatility"
-mySearch <- searchTwitter(myChar, n=1000)
+myChar <- "China"
+mySearch <- searchTwitter(myChar, n=10000)
 
 #mySearch.df <- twListToDF(mySearch)
 #mySearchUsers <- mySearch.df$screenName
 
 createCorpus <- function(myTwitterSearch){
     
+    mySearchText <- sapply(myTwitterSearch, function(x) x$getText())
+    
     #Clean urls
     #see: http://stackoverflow.com/a/31703863/5252361
-    mySearchText <- sapply(myTwitterSearch, function(x) x$getText())
     mySearchText <- gsub("(f|ht)(tp)(s?)(://)(.*)[.|/](.*)", "", mySearchText)
+    
+    #Clean "'s"
+    #see: http://stackoverflow.com/a/15255751/5252361
+    mySearchText <- gsub("['|`]s", "", mySearchText)
+    
+    #Keep only English tweets
+    whichLanguage <- sapply(mySearchText, textcat)
+    mySearchText <- mySearchText[which(whichLanguage[]=="english")]
+    
+    #Convert non-convertible bytes with hex codes
+    #Adapted from http://stackoverflow.com/a/11633398/5252361
+    mySearchText <- sapply(mySearchText,
+                           function(x) iconv(enc2utf8(x), sub = "byte"))
     
     mySearchCorpus <- Corpus(VectorSource(mySearchText))
     
     #Build list of words to filter out
     myStopwords <- c("RT")
     
-    #Use package stringi since its tolower works with non-UTF
-    #see: http://stackoverflow.com/a/27765192/5252361
-    mySearchCorpus <- tm_map(mySearchCorpus, content_transformer(stri_trans_tolower))
-
+    mySearchCorpus <- tm_map(mySearchCorpus, content_transformer(tolower))
     mySearchCorpus <- tm_map(mySearchCorpus,
                              function(x) removeWords(x,stopwords("english")))
     mySearchCorpus <- tm_map(mySearchCorpus, removeWords, myStopwords)
@@ -63,7 +74,7 @@ tdm <- TermDocumentMatrix(myCorpus)
 
 findFreqTerms(tdm, 5)
 
-wordcloud(myCorpus, min.freq=5, max.words=75)
+wordcloud(myCorpus, min.freq=5, max.words=50)
 
 #Playing with bigrams
 BigramTokenizer <-
@@ -76,3 +87,4 @@ tdm2 <- TermDocumentMatrix(myCorpus,
 
 tdm2b <- removeSparseTerms(tdm2, 0.9)
 inspect(tdm2b)
+
