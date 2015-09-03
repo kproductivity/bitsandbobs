@@ -1,0 +1,167 @@
+---
+title: "Was the crash that big?"
+author: "Francisco Marco-Serrano"
+date: "3 September 2015"
+output: html_document
+---
+
+Trying to replicate the diagrams in 'Was the crash that big?', from [The Economist Aug 28th September](http://www.economist.com/blogs/freeexchange/2015/08/chinas-stockmarket-0).
+
+
+```{r}
+
+library(Quandl)
+library(lattice)
+library(reshape2)
+library(RColorBrewer)
+library(PerformanceAnalytics)
+
+Sys.setlocale("LC_TIME", "C")
+
+```
+
+You need a Quandl API key (mine is hidden here, of course!): Quandl.auth("yourAPIkey")
+
+```{r echo=FALSE}
+
+Quandl.auth("xnFiDU17Q1VvAQx742zx")
+
+```
+
+#Read and prepare data
+
+```{r}
+
+SSEC <- Quandl("YAHOO/INDEX_SSEC",
+                start_date="1997-07-02", type="zoo")
+
+SP500 <- Quandl("YAHOO/INDEX_GSPC",
+                 start_date="1950-01-03", type="zoo")
+
+N225 <- Quandl("YAHOO/INDEX_N225",
+                start_date="1984-01-04", type="zoo")
+
+#Data obtained from Yahoo Finance
+FTSE100 <- read.zoo("table.csv", header=TRUE, sep=",", format="%Y-%m-%d")
+
+#Merge 4 indexes Adj.Close
+indexes <- merge(SSEC=SSEC[,6],SP500=SP500[,6],
+                 N225=N225[,6],FTSE100=FTSE100[,6], all=FALSE)
+
+#Subset from year 2000
+startDate <- as.Date("2000-01-01")
+endDate <- as.Date("2015-08-31")
+indexes <- window(indexes, start=startDate)
+
+```
+
+#Calculate returns
+
+```{r}
+
+r.simple <- Return.calculate(indexes, method="simple")
+
+# remove the NAs generated in the first period
+r.simple <- r.simple[-1,]
+
+plot(r.simple, plot.type="multiple")
+
+```
+
+#Equity curves
+
+```{r}
+
+equityCurve <- cumprod(1+r.simple)
+plot(equityCurve, plot.type="single", ylab="Cumulative Returns",
+     col=c("black", "blue", "red", "green"), lwd=1)
+legend(x="topleft", legend=c("SSEC", "SP500", "N225", "FTSE100"),
+       col=c("black", "blue", "red", "green"), lwd=1)
+
+```
+
+#Histograms
+
+```{r}
+
+r.simple <- as.data.frame(r.simple*100)
+r.simple$id <- row.names(r.simple)
+r.simple <- melt(r.simple, value.name="returns")
+
+#Draw histograms
+#See: http://www.magesblog.com/2012/12/changing-colours-and-legends-in-lattice.html
+myColours <- brewer.pal(6,"Blues")
+mySettings <- list(
+    superpose.polygon=list(col=myColours[2:5], border="transparent"),
+    strip.background=list(col=myColours[6]),
+    strip.border=list(col="black")
+)
+
+myCrash <- r.simple[r.simple$id=="2015-08-24",]
+
+histogram(~returns|variable, data=r.simple, type="percent",
+          xlab="adjusted returns (%) - Own source based on Yahoo Finance data from 04-01-2000",
+          main="Was the crash that big?",
+          nint=30,
+          par.settings = mySettings,
+          par.strip.text=list(col="white", font=2),
+          layout=c(2,2),
+          key=list(space="top", columns=2,
+                   lines=list(col="red", lty=c("twodash", "solid"), lwd=1),
+                   text=list(c("3 std.dev.","Black Monday returns (24-08-2015)"))),
+          panel = function(x, ...) {
+              mu=mean(x)
+              sigma=sd(x)
+              panel.abline(v=mu-3*sigma, lty = "twodash", col = "red")
+              panel.abline(v=mu+3*sigma, lty = "twodash", col = "red")
+              panel.abline(v=myCrash[panel.number(),]$returns,lty="solid",col="red")
+              panel.histogram(x, ..., col = myColours[panel.number()])
+          })
+
+```
+
+#Deseasonalised results
+
+```{r}
+
+#Volatility
+r.simple$r2 <- (r.simple$returns)^2
+
+#Monthly average
+r.simple$months <- cut.Date(as.Date(r.simple$id), breaks="month")
+r.monthly <- r2.monthly <- aggregate(r.simple$returns, by=list(r.simple$months, r.simple$variable), mean)
+names(r.monthly) <- c("months", "variable", "r.monthly")
+r2.monthly <- aggregate(r.simple$r2, by=list(r.simple$months, r.simple$variable), mean)
+names(r2.monthly) <- c("months", "variable", "r2.monthly")
+
+#Includes monthly average of returns and squared returns
+r.monthly <- merge(r.monthly, r2.monthly)
+r.simple <- merge(r.simple, r.monthly, x.all=T)
+
+#Deseasonalised returns
+r.simple$returns.des <- r.simple$returns/sqrt(r.simple$r2.monthly)
+r.simple.des <- dcast(r.simple[,c(1,3,8)], id ~ variable)
+r.simple.des <- melt(r.simple.des, value.name="returns.des")
+
+myCrash <- r.simple.des[r.simple.des$id=="2015-08-24",]
+
+histogram(~returns.des|variable, data=r.simple.des, type="percent",
+          xlab="deseasonalised returns (%) - Own source based on Yahoo Finance data from 04-01-2000\n*Deseasonalised using square root of monthly average squared returns.",
+          main="Was the crash that big? (ii)",
+          nint=30,
+          par.settings = mySettings,
+          par.strip.text=list(col="white", font=2),
+          layout=c(2,2),
+          key=list(space="top", columns=2,
+                   lines=list(col="red", lty=c("twodash", "solid"), lwd=1),
+                   text=list(c("3 std.dev.","Black Monday returns (24-08-2015)"))),
+          panel = function(x, ...) {
+              mu=mean(x)
+              sigma=sd(x)
+              panel.abline(v=mu-3*sigma, lty = "twodash", col = "red")
+              panel.abline(v=mu+3*sigma, lty = "twodash", col = "red")
+              panel.abline(v=myCrash[panel.number(),]$returns.des,lty="solid",col="red")
+              panel.histogram(x, ..., col = myColours[panel.number()])
+          })
+
+```
