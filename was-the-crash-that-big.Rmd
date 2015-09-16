@@ -24,7 +24,7 @@ You need a Quandl API key (mine is hidden here, of course!): Quandl.auth("yourAP
 
 ```{r echo=FALSE}
 
-Quandl.auth("xnFiDU17Q1VvAQx742zx")
+Quandl.auth("yourAPIkey")
 
 ```
 
