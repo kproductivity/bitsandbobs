@@ -19,20 +19,19 @@ sapply(pkgs, install.pkgs)
 ###################################
 
 readAPIkey <- function(){
-    if(file.exists("twitter.key") == TRUE){     # if apikey is already recorded
-        apikey = read.csv("twitter.key",
-                          header = FALSE)       # read it
-    } else {                                    # otherwise, ask for it
-        apikey <- as.vector(c("","","",""))
-        apikey[1] = readline("Consumer key   :")   
-        apikey[2] = readline("Consumer secret:")
-        apikey[3] = readline("Access token   :") 
-        apikey[4] = readline("Access secret  :") 
-        write.csv(apikey, "twitter.key",
-                  col.names = FALSE,
-                  row.names = FALSE)           # and write it in the file
-    }
-    apikey
+  if(file.exists("twitter.key") == TRUE){                  # if apikey is already recorded
+    apikey = as.character(read.csv("twitter.key",
+                                   header = TRUE)$x)       # read it
+  } else {                                                 # otherwise, ask for it
+    apikey <- vector(mode="character", length=4)
+    apikey[1] = readline("Consumer key   :")   
+    apikey[2] = readline("Consumer secret:")
+    apikey[3] = readline("Access token   :") 
+    apikey[4] = readline("Access secret  :") 
+    write.csv(apikey, "twitter.key",
+              row.names = FALSE)                          # and write it in the file
+  }
+  apikey
 }
 
 
@@ -42,10 +41,10 @@ readAPIkey <- function(){
 
 apikey <- readAPIkey()
 
-consumer_key <- apikey[1,]
-consumer_secret <- apikey[2,]
-access_token <- apikey[3,]
-access_secret <- apikey[4,]
+consumer_key <- apikey[1]
+consumer_secret <- apikey[2]
+access_token <- apikey[3]
+access_secret <- apikey[4]
 
 #Adjustment only for Windows
 #see: http://davetang.org/muse/2013/04/06/using-the-r_twitter-package/
