@@ -3,6 +3,9 @@
 # https://spark.apache.org/docs/latest/sparkr.html #
 ####################################################
 
+# Download 'Pre-build for Hadoop 2.6 and later' and extract in a folder.
+## https://spark.apache.org/downloads.html
+
 # Loading the package
 if (nchar(Sys.getenv("SPARK_HOME")) < 1) {
   Sys.setenv(SPARK_HOME = "/home/kproductivity/Spark")
